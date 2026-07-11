@@ -9,7 +9,7 @@ app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
 
-const routes = require("./routes/health.routes");
+const routes = require("./routes/auth.routes");
 
 // app.use("/", rout    es);
 app.use("/api/v1", routes);

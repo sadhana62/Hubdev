@@ -1,4 +1,11 @@
 {
+  "name": "hubdev-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
   "dependencies": {
     "install": "^0.13.0"
   }
