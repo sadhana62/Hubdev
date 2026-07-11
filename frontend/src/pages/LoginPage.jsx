@@ -1,6 +1,57 @@
-import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { loginUser, saveAuthSession } from "../services/authApi";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [status, setStatus] = useState({
+    loading: false,
+    error: "",
+    success: "",
+  });
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setStatus({
+      loading: true,
+      error: "",
+      success: "",
+    });
+
+    try {
+      const response = await loginUser(formData);
+      saveAuthSession(response.data);
+
+      setStatus({
+        loading: false,
+        error: "",
+        success: "Login successful. Redirecting...",
+      });
+
+      setTimeout(() => {
+        navigate("/");
+      }, 600);
+    } catch (error) {
+      setStatus({
+        loading: false,
+        error: error.message,
+        success: "",
+      });
+    }
+  };
+
   return (
     <section className="register-page">
       <header className="register-header">
@@ -18,26 +69,38 @@ export default function LoginPage() {
           <h1>Welcome back</h1>
           <p>Sign in to continue building your developer profile.</p>
 
-          <form className="register-form" onSubmit={(event) => event.preventDefault()}>
-            <label htmlFor="loginEmail">Email or username</label>
+          <form className="register-form" onSubmit={handleSubmit}>
+            <label htmlFor="email">Email</label>
             <div className="input-wrap">
               <span>&#9993;</span>
               <input
-                id="loginEmail"
-                name="loginEmail"
-                type="text"
-                placeholder="name@company.com or username"
+                id="email"
+                name="email"
+                type="email"
+                placeholder="name@company.com"
+                value={formData.email}
+                onChange={handleChange}
               />
             </div>
 
-            <label htmlFor="loginPassword">Password</label>
+            <label htmlFor="password">Password</label>
             <div className="input-wrap">
               <span>&#128274;</span>
-              <input id="loginPassword" name="loginPassword" type="password" placeholder="........" />
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="........"
+                value={formData.password}
+                onChange={handleChange}
+              />
             </div>
 
-            <button type="submit" className="register-submit">
-              Login
+            {status.error ? <p className="form-message form-message-error">{status.error}</p> : null}
+            {status.success ? <p className="form-message form-message-success">{status.success}</p> : null}
+
+            <button type="submit" className="register-submit" disabled={status.loading}>
+              {status.loading ? "Logging in..." : "Login"}
               <span aria-hidden="true">&#8594;</span>
             </button>
           </form>

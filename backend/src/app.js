@@ -11,14 +11,12 @@ app.use(express.json());
 
 const routes = require("./routes/auth.routes");
 
-// app.use("/", rout    es);
+
 app.use("/api/v1", routes);
 
 app.get("/",(req,res) =>{
     res.send(`<h1>backend of devhub</h1>`)
 })
-// const { getHealth } = require("./controllers/health.controller");
 
-// app.get("/", getHealth);
 
 module.exports = app;

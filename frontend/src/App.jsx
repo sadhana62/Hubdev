@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes, useLocation } from "react-router-dom";
 import HomePage from "./pages/HomePage.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import StackPage from "./pages/StackPage.jsx";
 import StatusPage from "./pages/StatusPage.jsx";
@@ -12,11 +13,11 @@ const links = [
 
 export default function App() {
   const location = useLocation();
-  const isRegisterPage = location.pathname === "/register";
+  const isAuthPage = location.pathname === "/register" || location.pathname === "/login";
 
   return (
-    <div className={isRegisterPage ? "app-frame register-frame" : "app-frame"}>
-      {!isRegisterPage ? (
+    <div className={isAuthPage ? "app-frame register-frame" : "app-frame"}>
+      {!isAuthPage ? (
         <header className="site-header">
           <div className="brand">DevHub</div>
 
@@ -35,11 +36,11 @@ export default function App() {
           </nav>
 
           <div className="site-actions">
-            <button className="btn btn-ghost" type="button">
+            <NavLink className="btn btn-ghost" to="/login">
               Login
-            </button>
+            </NavLink>
             <NavLink className="btn btn-solid" to="/register">
-              Create Post
+              Create Account
             </NavLink>
           </div>
         </header>
@@ -48,6 +49,7 @@ export default function App() {
       <main className="site-main">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/stack" element={<StackPage />} />
           <Route path="/search" element={<StatusPage />} />
