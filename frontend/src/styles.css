@@ -98,7 +98,14 @@ code {
 
 .site-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
+}
+
+.auth-greeting {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .btn {
