@@ -26,3 +26,39 @@ export const createPost = async (payload) => {
 
   return parseResponse(response);
 };
+
+export const likePost = async (payload) => {
+  const response = await fetch(`${API_BASE}/likes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseResponse(response);
+};
+
+export const unlikePost = async (payload) => {
+  const response = await fetch(`${API_BASE}/likes/unlike`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseResponse(response);
+};
+
+export const createComment = async (payload) => {
+  const response = await fetch(`${API_BASE}/comments/create`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseResponse(response);
+};

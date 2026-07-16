@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuthSession, clearAuthSession } from "../services/authApi";
-import { getPosts, createPost } from "../services/postApi";
+import { getPosts, createPost, likePost, unlikePost, createComment } from "../services/postApi";
+
+const normalizeComments = (comments = []) =>
+  Array.isArray(comments)
+    ? comments.map((comment) => ({
+        id: comment._id || comment.id || `${comment.user}-${comment.body}`,
+        user: comment.user || "developer",
+        body: comment.body || "",
+      }))
+    : [];
 
 export default function FeedPage() {
   const navigate = useNavigate();
@@ -33,6 +42,7 @@ async fn main() {
       },
       likes: "1.2k",
       comments: 48,
+      commentList: [],
     },
     {
       id: 2,
@@ -44,10 +54,13 @@ async fn main() {
       image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDUuurDV2JWAuNhEOFe5-NDXqusmSDuMPt39Ly33D0qIBlJlHHKrIu2fiYRGbjtm5Z8WaGWBroJM0N-P-NVaL0dZVvBT1_dwKNLu18MVnxuEN0IH0YoRXX2UWy1RedFfLG6sXUsYvyyFGwPBTC66t5Qyx_sPI2VBVf9xw3MqjCSdyBOKl-AHg8I8KoKqtm-6pulJ_GKjbfDN-tiu3WCRxqrqAblphTCROpzfuLrkENG7dpF9w3oJsuIyjrrJRMA2vcyTih1EJiVl0Q",
       likes: "842",
       comments: 124,
+      commentList: [],
     }
   ]);
 
   const [newPostText, setNewPostText] = useState("");
+  const [activeCommentPostId, setActiveCommentPostId] = useState(null);
+  const [commentDrafts, setCommentDrafts] = useState({});
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
@@ -55,16 +68,22 @@ async fn main() {
       try {
         const response = await getPosts();
         if (response && response.posts) {
-          const backendPosts = response.posts.map((p) => ({
-            id: p._id,
-            author: p.title || "DevHub Engineer",
-            handle: `@dev_member`,
-            time: "Just now",
-            avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuB9Cs3FnKmxvQzkJNuY_KMFgDQJIQ6iGRe0rTmqzaCCCxNexZe1OCgxF5kfCqnTpbQD3Om9UO4c8xVu1eB0R2Vb4-tqGzhiKVGopUwu5zlNvnpcwEyYefOhnbj4XCWbzC8umzJMQCtDhVWMjGSOQO70z3eQGWLI63o7LuhkupRBTqjQP6ZAPvL5o0hbUD4qlFxb9-fhANySuXcas2cTldpEC8pwr6TiF1iJYVIUv7Cfv1uRIH55TPX7fSwH7YAetDi1HFjptzqTbCY",
-            text: p.body,
-            likes: p.likes?.length || 0,
-            comments: p.comments?.length || 0,
-          }));
+          const backendPosts = response.posts.map((p) => {
+            const normalizedComments = normalizeComments(p.comments);
+
+            return {
+              id: p._id,
+              author: p.title || "DevHub Engineer",
+              handle: `@dev_member`,
+              time: "Just now",
+              avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuB9Cs3FnKmxvQzkJNuY_KMFgDQJIQ6iGRe0rTmqzaCCCxNexZe1OCgxF5kfCqnTpbQD3Om9UO4c8xVu1eB0R2Vb4-tqGzhiKVGopUwu5zlNvnpcwEyYefOhnbj4XCWbzC8umzJMQCtDhVWMjGSOQO70z3eQGWLI63o7LuhkupRBTqjQP6ZAPvL5o0hbUD4qlFxb9-fhANySuXcas2cTldpEC8pwr6TiF1iJYVIUv7Cfv1uRIH55TPX7fSwH7YAetDi1HFjptzqTbCY",
+              text: p.body,
+              likes: p.likes?.length || 0,
+              comments: normalizedComments.length,
+              commentList: normalizedComments,
+              isLiked: p.likes?.some((like) => like.user === username) || false,
+            };
+          });
 
           setPosts((prev) => [
             ...backendPosts,
@@ -100,6 +119,8 @@ async fn main() {
           text: response.post.body,
           likes: 0,
           comments: 0,
+          commentList: [],
+          isLiked: false,
         };
 
         setPosts((current) => [newPostBackend, ...current]);
@@ -107,6 +128,92 @@ async fn main() {
       }
     } catch (err) {
       console.error("Failed to create post on backend:", err);
+    }
+  };
+
+  const handleLikePost = async (postId) => {
+    const activeSession = getAuthSession();
+    const user = activeSession?.user?.username;
+
+    if (!user || typeof postId !== "string") {
+      return;
+    }
+
+    const targetPost = posts.find((post) => post.id === postId);
+    const isLiked = targetPost?.isLiked === true;
+
+    try {
+      const response = isLiked
+        ? await unlikePost({ post: postId, user })
+        : await likePost({ post: postId, user });
+
+      if (response?.post) {
+        setPosts((current) =>
+          current.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  likes: response.post.likes?.length ?? post.likes,
+                  isLiked: response.liked ?? !isLiked,
+                }
+              : post
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Failed to like post:", err);
+    }
+  };
+
+  const handleCommentPost = async (postId) => {
+    setActiveCommentPostId((current) => (current === postId ? null : postId));
+  };
+
+  const handleCommentDraftChange = (postId, value) => {
+    setCommentDrafts((current) => ({
+      ...current,
+      [postId]: value,
+    }));
+  };
+
+  const handleSubmitComment = async (postId) => {
+    const activeSession = getAuthSession();
+    const user = activeSession?.user?.username;
+    const commentText = commentDrafts[postId]?.trim();
+
+    if (!user || typeof postId !== "string" || !commentText) {
+      return;
+    }
+
+    try {
+      const response = await createComment({
+        post: postId,
+        user,
+        body: commentText,
+      });
+
+      if (response?.post) {
+        const updatedComments = normalizeComments(response.post.comments);
+        setPosts((current) =>
+          current.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  comments: updatedComments.length,
+                  commentList: updatedComments,
+                }
+              : post
+          )
+        );
+      }
+
+      setCommentDrafts((current) => ({
+        ...current,
+        [postId]: "",
+      }));
+      setActiveCommentPostId(null);
+    } catch (err) {
+      console.error("Failed to create comment:", err);
     }
   };
 
@@ -321,22 +428,75 @@ async fn main() {
                 {/* Interaction Bar */}
                 <div className="flex justify-between items-center pt-md border-t border-white/5 text-on-surface-variant">
                   <div className="flex gap-lg">
-                    <button className="flex items-center gap-xs hover:text-primary transition-colors group cursor-pointer">
-                      <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">favorite</span>
+                    <button
+                      type="button"
+                      onClick={() => handleLikePost(post.id)}
+                      className="flex items-center gap-xs hover:text-primary transition-colors group cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">
+                        {post.isLiked ? "favorite" : "favorite_border"}
+                      </span>
                       <span className="font-label-sm text-label-sm">{post.likes}</span>
                     </button>
-                    <button className="flex items-center gap-xs hover:text-primary transition-colors group cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => handleCommentPost(post.id)}
+                      className="flex items-center gap-xs hover:text-primary transition-colors group cursor-pointer"
+                    >
                       <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">chat_bubble</span>
                       <span className="font-label-sm text-label-sm">{post.comments}</span>
                     </button>
-                    <button className="flex items-center gap-xs hover:text-primary transition-colors group cursor-pointer">
+                    <button type="button" className="flex items-center gap-xs hover:text-primary transition-colors group cursor-pointer">
                       <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">share</span>
                     </button>
                   </div>
-                  <button className="hover:text-primary transition-colors cursor-pointer">
+                  <button type="button" className="hover:text-primary transition-colors cursor-pointer">
                     <span className="material-symbols-outlined text-[20px]">bookmark</span>
                   </button>
                 </div>
+
+                {activeCommentPostId === post.id ? (
+                  <div className="mt-md border-t border-white/5 pt-md">
+                    {post.commentList?.length ? (
+                      <div className="mb-md space-y-sm">
+                        {post.commentList.map((comment) => (
+                          <div key={comment.id} className="rounded-lg border border-white/10 bg-white/5 px-md py-sm">
+                            <p className="font-label-sm text-label-sm text-primary">@{comment.user}</p>
+                            <p className="mt-xs text-body-sm text-on-surface">{comment.body}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mb-md text-body-sm text-on-surface-variant">No comments yet. Start the conversation.</p>
+                    )}
+                    <label className="block font-label-sm text-label-sm text-on-surface-variant mb-sm" htmlFor={`comment-${post.id}`}>
+                      Add a comment
+                    </label>
+                    <textarea
+                      id={`comment-${post.id}`}
+                      className="w-full min-h-[84px] rounded-lg bg-[#0d0d15] border border-white/10 px-md py-sm text-body-sm text-on-surface outline-none focus:border-primary resize-none"
+                      placeholder="Share a reply..."
+                      value={commentDrafts[post.id] || ""}
+                      onChange={(e) => handleCommentDraftChange(post.id, e.target.value)}
+                    />
+                    <div className="mt-sm flex justify-end gap-sm">
+                      <button
+                        type="button"
+                        onClick={() => setActiveCommentPostId(null)}
+                        className="px-md py-sm rounded-full border border-white/10 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSubmitComment(post.id)}
+                        className="px-md py-sm rounded-full bg-primary text-on-primary text-label-sm font-label-sm font-bold hover:opacity-90 transition-opacity"
+                      >
+                        Post comment
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>
