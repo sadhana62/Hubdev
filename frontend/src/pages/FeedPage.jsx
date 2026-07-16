@@ -223,9 +223,9 @@ async fn main() {
   };
 
   return (
-    <div className="max-w-max-width mx-auto flex min-h-screen relative bg-[#0f172a] text-on-surface">
+    <div className="mx-auto flex h-screen max-w-max-width overflow-hidden bg-[#0f172a] text-on-surface">
       {/* LEFT SIDEBAR */}
-      <aside className="bg-surface-container-lowest h-screen sticky top-0 w-64 hidden lg:flex flex-col border-r border-white/10 py-md px-4 z-40">
+      <aside className="hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-surface-container-lowest px-4 py-md lg:flex">
         <div className="mb-xl px-2">
           <h1 className="font-headline-md text-headline-md font-bold text-primary">DevHub</h1>
           <p className="font-label-sm text-label-sm text-on-surface-variant opacity-70">Developer Network</p>
@@ -307,8 +307,8 @@ async fn main() {
       </aside>
 
       {/* CENTER FEED */}
-      <main className="flex-grow min-w-0 border-r border-white/5">
-        <div className="w-full max-w-2xl mx-auto px-4 md:px-lg py-xl">
+      <main className="min-w-0 flex-1 overflow-y-auto border-r border-white/5">
+        <div className="mx-auto w-full max-w-2xl px-4 py-xl md:px-lg">
           {/* Header for mobile/tablet */}
           <div className="lg:hidden flex justify-between items-center mb-xl">
             <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">DevHub</h1>
@@ -504,7 +504,7 @@ async fn main() {
       </main>
 
       {/* RIGHT SIDEBAR */}
-      <aside className="hidden xl:block w-80 h-screen sticky top-0 p-lg overflow-y-auto z-40 border-l border-white/10 bg-[#0f172a]">
+      <aside className="hidden h-screen w-80 shrink-0 overflow-hidden border-l border-white/10 bg-[#0f172a] p-lg xl:block">
         {/* Trending Tech */}
         <section className="mb-xxl">
           <h2 className="font-headline-md text-headline-md font-bold text-on-surface mb-lg">Trending Tech</h2>
