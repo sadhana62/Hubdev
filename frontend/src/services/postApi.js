@@ -10,10 +10,21 @@ const parseResponse = async (response) => {
   return data;
 };
 
-export const getPosts = async () => {
-  const response = await fetch(`${API_BASE}/posts`);
+// export const getPosts = async () => {
+//   const response = await fetch(`${API_BASE}/posts`);
+//   return parseResponse(response);
+// };
+
+// Pagination
+export const getPosts = async (page = 1, limit = 5) => {
+  const response = await fetch(
+    `${API_BASE}/posts?page=${page}&limit=${limit}`
+  );
+
   return parseResponse(response);
 };
+
+
 
 export const createPost = async (payload) => {
   const response = await fetch(`${API_BASE}/posts/create`, {

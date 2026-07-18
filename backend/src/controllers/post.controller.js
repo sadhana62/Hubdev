@@ -19,7 +19,15 @@ exports.createpost = async(req,res) =>{
 
 exports.getpost = async (req,res) =>{
     try{
-        const post  = await Post.find().populate("comments").populate("likes").exec();
+        // const post  = await Post.find().populate("comments").populate("likes").exec();
+        const page =Number(req.query.page)||1
+        const limit =Number(req.query.limit) || 5;
+        const skip = (page - 1) * limit;
+        const post  = await Post.find()
+        .skip(skip).limit(limit)
+        .populate("comments").populate("likes").exec()
+
+
        res.json({
         posts:post
      })

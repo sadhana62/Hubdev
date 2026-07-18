@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+// import { useRef } from "react";
 import { getAuthSession, clearAuthSession } from "../services/authApi";
 import { getPosts, createPost, likePost, unlikePost, createComment } from "../services/postApi";
+import { useRef, useCallback } from "react";
+
 
 const normalizeComments = (comments = []) =>
   Array.isArray(comments)
@@ -19,83 +22,102 @@ export default function FeedPage() {
   const userBio = authSession?.user?.bio || "Building tools and sharing ideas";
 
   // Initial pre-populated posts matching the Stitch design
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      author: "Sarah Chen",
-      handle: "@schen_io",
-      time: "2h ago",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDljKnOzEpf_svp1H7bhHUfXKcQAfJZlZGbY7Iot23UkjQEyDQuGw84268JUDluCOCVAduyymG7uTODbNh_wpbmad6zUu29NNSQHET9kEqhuVkPKxmzpa2lGjzOHBSL_RG-cvlpKfdySsJbEdQNAJVHl1Qhpw1XOdPQz8PuWfW78OxEZDQxkMd-pn0YudiGscvgEeHfNL-UBRPW5bCplbWQvM0ldiY6ZXkHiGTXXXfh0gI2dB1g56tS1Xi-MPJBh5jonAMibDp7fiE",
-      text: "Just optimized our async message queue using Tokio. The performance gains in Rust are honestly breathtaking. Check out this trait implementation for our worker pool! 🦀✨",
-      code: {
-        filename: "worker_pool.rs",
-        content: `pub trait Worker {
-    type Input;
-    async fn process(&self, data: Self::Input) -> Result<(), Error>;
-}
-
-#[tokio::main]
-async fn main() {
-    let pool = Pool::new(32).await;
-    pool.spawn_workers().await?;
-}`
-      },
-      likes: "1.2k",
-      comments: 48,
-      commentList: [],
-    },
-    {
-      id: 2,
-      author: "Marcus T.",
-      handle: "@marcus_builds",
-      time: "5h ago",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAGYSzQs0_BByK_cibiR8_LUugtNrA17EJq8iDQCX6I8sNvtia1l6rET-WyJd4Gmi4OHrsQqIQWic8w2c0akUZWo8c2s3YP1VfS0IBFXkx41L3AZbhtlZenHAlreew3hxelXXyhdKS6HvfIaWDLAMxXEQkqx6XAxLaGIXC6ze5H2FVm_DmvMM9YRJcXpxSB_C7Uosd22VVVDJev0voHqcaZhzvPQa7Evd6iX7rEnbGZcydrhZRYLnz18OOBcoEWOgfiWoWovU-lISk",
-      text: "Finally shipped the beta of \"Nebula Dash\" — an open-source dashboard for Kubernetes clusters. Built with Next.js 14 and Three.js for real-time visualization.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDUuurDV2JWAuNhEOFe5-NDXqusmSDuMPt39Ly33D0qIBlJlHHKrIu2fiYRGbjtm5Z8WaGWBroJM0N-P-NVaL0dZVvBT1_dwKNLu18MVnxuEN0IH0YoRXX2UWy1RedFfLG6sXUsYvyyFGwPBTC66t5Qyx_sPI2VBVf9xw3MqjCSdyBOKl-AHg8I8KoKqtm-6pulJ_GKjbfDN-tiu3WCRxqrqAblphTCROpzfuLrkENG7dpF9w3oJsuIyjrrJRMA2vcyTih1EJiVl0Q",
-      likes: "842",
-      comments: 124,
-      commentList: [],
-    }
-  ]);
+  const [posts, setPosts] = useState([]);
 
   const [newPostText, setNewPostText] = useState("");
   const [activeCommentPostId, setActiveCommentPostId] = useState(null);
   const [commentDrafts, setCommentDrafts] = useState({});
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  useEffect(() => {
-    const loadPosts = async () => {
+  const observer = useRef(null);
+
+// pagination
+  const [page, setPage] = useState(1);
+// const [page, setPage] = useState(1);
+const [loading, setLoading] = useState(false);
+const [hasMore, setHasMore] = useState(true);
+// const [page, setPage] = useState(1);
+
+useEffect(() => {
+
+   const loadPosts = async () => {
+
+      if (loading || !hasMore) return;
+
+      setLoading(true);
+
       try {
-        const response = await getPosts();
-        if (response && response.posts) {
-          const backendPosts = response.posts.map((p) => {
+
+         const response = await getPosts(page,5);
+
+         if(response.posts.length === 0){
+            setHasMore(false);
+            return;
+         }
+
+         const backendPosts = response.posts.map((p)=>{
+
             const normalizedComments = normalizeComments(p.comments);
 
-            return {
-              id: p._id,
-              author: p.title || "DevHub Engineer",
-              handle: `@dev_member`,
-              time: "Just now",
-              avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuB9Cs3FnKmxvQzkJNuY_KMFgDQJIQ6iGRe0rTmqzaCCCxNexZe1OCgxF5kfCqnTpbQD3Om9UO4c8xVu1eB0R2Vb4-tqGzhiKVGopUwu5zlNvnpcwEyYefOhnbj4XCWbzC8umzJMQCtDhVWMjGSOQO70z3eQGWLI63o7LuhkupRBTqjQP6ZAPvL5o0hbUD4qlFxb9-fhANySuXcas2cTldpEC8pwr6TiF1iJYVIUv7Cfv1uRIH55TPX7fSwH7YAetDi1HFjptzqTbCY",
-              text: p.body,
-              likes: p.likes?.length || 0,
-              comments: normalizedComments.length,
-              commentList: normalizedComments,
-              isLiked: p.likes?.some((like) => like.user === username) || false,
-            };
-          });
+            return{
+                id:p._id,
+                author:p.title,
+                handle:"@dev_member",
+                time:"Just now",
+                avatar:"YOUR_AVATAR_URL",
+                text:p.body,
+                likes:p.likes?.length || 0,
+                comments:normalizedComments.length,
+                commentList:normalizedComments,
+                isLiked:p.likes?.some(l=>l.user===username) || false
+            }
 
-          setPosts((prev) => [
-            ...backendPosts,
-            ...prev.filter((x) => typeof x.id === "number"),
-          ]);
-        }
-      } catch (err) {
-        console.error("Failed to load posts:", err);
+         })
+
+        if(page === 1){
+    setPosts(backendPosts);
+}
+else{
+    setPosts(prev => [...prev, ...backendPosts]);
+}
+
       }
-    };
-    loadPosts();
-  }, []);
+      catch(err){
+          console.log(err);
+      }
+      finally{
+         setLoading(false);
+      }
+
+   }
+
+   loadPosts();
+
+
+
+},[page]);
+
+const lastPostRef = useCallback((node) => {
+
+    if (loading) return;
+
+    if (observer.current) {
+        observer.current.disconnect();
+    }
+
+    observer.current = new IntersectionObserver((entries) => {
+
+        if (entries[0].isIntersecting && hasMore) {
+            setPage((prev) => prev + 1);
+        }
+
+    });
+
+    if (node) {
+        observer.current.observe(node);
+    }
+
+}, [loading, hasMore]);
 
   const handleCreatePost = async (e) => {
     e.preventDefault();
@@ -368,8 +390,8 @@ async fn main() {
 
           {/* Post Feed */}
           <div className="space-y-lg">
-            {posts.map((post) => (
-              <article key={post.id} className="bg-[#1f1f27] rounded-xl p-lg border border-white/10 shadow-sm hover:shadow-lg transition-all duration-300">
+            {posts.map((post,index) => (
+              <article key={post.id} ref={index === posts.length - 1 ? lastPostRef : null} className="bg-[#1f1f27] rounded-xl p-lg border border-white/10 shadow-sm hover:shadow-lg transition-all duration-300">
                 <div className="flex gap-md mb-md">
                   <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 cursor-pointer">
                     <img className="w-full h-full object-cover" alt={post.author} src={post.avatar} />
