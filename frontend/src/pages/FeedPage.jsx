@@ -5,6 +5,9 @@ import { getAuthSession, clearAuthSession } from "../services/authApi";
 import { getPosts, createPost, likePost, unlikePost, createComment } from "../services/postApi";
 import { useRef, useCallback } from "react";
 
+// for searching and sorting
+import { Search } from "lucide-react";
+
 
 const normalizeComments = (comments = []) =>
   Array.isArray(comments)
@@ -30,6 +33,10 @@ export default function FeedPage() {
   const [commentDrafts, setCommentDrafts] = useState({});
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
+// for searching and sort
+const [search, setSearch] = useState("");
+const [sort, setSort] = useState("latest");
+
   const observer = useRef(null);
 
 // pagination
@@ -49,7 +56,13 @@ useEffect(() => {
 
       try {
 
-         const response = await getPosts(page,5);
+        //  const response = await getPosts(page,5);
+        const response = await getPosts({
+    page,
+    limit: 5,
+    search,
+    sort,
+});
 
          if(response.posts.length === 0){
             setHasMore(false);
@@ -96,7 +109,13 @@ else{
 
 
 
-},[page]);
+}, [page, search, sort]);
+
+
+useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+}, [search, sort]);
 
 const lastPostRef = useCallback((node) => {
 
@@ -362,6 +381,45 @@ const lastPostRef = useCallback((node) => {
               />
             </div>
           </div>
+
+          {/* create a search bar and sort bar.. */}
+          {/* Search & Sort */}
+<div className="bg-[#1f1f27] border border-white/10 rounded-xl p-4 mb-6 shadow-sm">
+  <div className="flex flex-col md:flex-row gap-4">
+
+    {/* Search */}
+    <div className="relative flex-1">
+      <Search
+        size={18}
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+      />
+
+      <input
+        type="text"
+        placeholder="Search posts..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full bg-[#2a2a35] border border-white/10 rounded-lg py-3 pl-11 pr-4
+        text-white placeholder-gray-400 outline-none
+        focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+      />
+    </div>
+
+    {/* Sort */}
+    <select
+      value={sort}
+      onChange={(e) => setSort(e.target.value)}
+      className="bg-[#2a2a35] border border-white/10 rounded-lg px-4 py-3
+      text-white outline-none focus:border-blue-500 focus:ring-1
+      focus:ring-blue-500 transition-all cursor-pointer"
+    >
+      <option value="latest">Latest</option>
+      <option value="oldest">Oldest</option>
+      <option value="likes">Most Liked</option>
+    </select>
+
+  </div>
+</div>
 
           {/* Create Post Card */}
           <div className="bg-[#1f1f27] rounded-xl p-lg border border-white/10 mb-xl shadow-sm">

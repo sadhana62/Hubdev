@@ -17,11 +17,24 @@ const parseResponse = async (response) => {
 //   return parseResponse(response);
 // };
 
-// Pagination
-export const getPosts = async (page = 1, limit = 5) => {
-  const response = await fetch(
-    `${API_BASE}/posts?page=${page}&limit=${limit}`
-  );
+// Pagination searching ans sorting 
+export const getPosts = async ({
+  page = 1,
+  limit = 5,
+  search = "",
+  sort = "latest",
+}) => {
+  const params = new URLSearchParams({
+    page,
+    limit,
+    sort,
+  });
+
+  if (search.trim()) {
+    params.append("search", search.trim());
+  }
+
+  const response = await fetch(`${API_BASE}/posts?${params.toString()}`);
 
   return parseResponse(response);
 };
