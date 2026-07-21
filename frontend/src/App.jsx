@@ -22,7 +22,7 @@ export default function App() {
   
   const isAuthPage = location.pathname === "/register" || location.pathname === "/login";
   const isFeedActive = authSession?.user && location.pathname === "/";
-  const showHeader = !isAuthPage && !isFeedActive;
+  const showHeader = !isAuthPage && !isFeedActive && location.pathname !== "/profile";
 
   useEffect(() => {
     setAuthSession(getAuthSession());
