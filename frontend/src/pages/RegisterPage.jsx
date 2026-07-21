@@ -56,6 +56,7 @@ export default function RegisterPage() {
 
     try {
       const response = await registerUser({
+        fullName: formData.fullName,
         username: formData.username,
         email: formData.email,
         password: formData.password,
@@ -192,7 +193,7 @@ export default function RegisterPage() {
                     placeholder="Brief developer bio (max 50 chars)"
                     type="text"
                     required
-                    maxLength={50}
+                    maxLength={160}
                     value={formData.bio}
                     onChange={handleChange}
                   />

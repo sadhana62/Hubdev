@@ -20,6 +20,7 @@ export default function FeedPage() {
   const authSession = getAuthSession();
   const username = authSession?.user?.username || "developer";
   const userBio = authSession?.user?.bio || "Building tools and sharing ideas";
+  const displayName = authSession?.user?.fullName || username.charAt(0).toUpperCase() + username.slice(1);
 
   // Initial pre-populated posts matching the Stitch design
   const [posts, setPosts] = useState([]);
@@ -279,6 +280,13 @@ const lastPostRef = useCallback((node) => {
           <button className="w-full bg-primary-container text-on-primary-container py-3 rounded-xl font-label-md text-label-md font-bold hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-primary/20 cursor-pointer">
             New Snippet
           </button>
+          <button
+            type="button"
+            onClick={() => navigate("/profile")}
+            className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-3 font-label-md text-label-md font-bold text-on-surface transition-colors hover:bg-white/10"
+          >
+            View Profile
+          </button>
         </div>
 
         {/* Profile Card */}
@@ -296,15 +304,23 @@ const lastPostRef = useCallback((node) => {
             </div>
             <div className="flex-grow overflow-hidden">
               <div className="font-label-md text-label-md font-bold text-on-surface truncate">
-                {username.charAt(0).toUpperCase() + username.slice(1)}
+                {displayName}
               </div>
               <div className="font-label-sm text-label-sm text-on-surface-variant truncate">@{username}</div>
+              <div className="mt-1 font-label-sm text-label-sm text-on-surface-variant truncate">{userBio}</div>
             </div>
             <span className="material-symbols-outlined text-on-surface-variant text-sm">more_horiz</span>
           </div>
 
           {showProfileMenu && (
             <div className="absolute bottom-16 left-0 right-0 bg-[#1E293B] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50">
+              <button
+                onClick={() => navigate("/profile")}
+                className="w-full px-4 py-3 text-left font-label-md text-label-md text-on-surface hover:bg-white/5 transition-colors flex items-center gap-sm cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">person</span>
+                View Profile
+              </button>
               <button 
                 onClick={handleLogout}
                 className="w-full px-4 py-3 text-left font-label-md text-label-md text-red-400 hover:bg-white/5 transition-colors flex items-center gap-sm cursor-pointer"

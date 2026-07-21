@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import StackPage from "./pages/StackPage.jsx";
 import StatusPage from "./pages/StatusPage.jsx";
 import FeedPage from "./pages/FeedPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
 import { clearAuthSession, getAuthSession } from "./services/authApi";
 
 const links = [
@@ -101,6 +102,7 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/stack" element={<StackPage />} />
           <Route path="/search" element={<StatusPage />} />
+          <Route path="/profile" element={authSession?.user ? <ProfilePage /> : <LoginPage />} />
         </Routes>
       </main>
     </div>

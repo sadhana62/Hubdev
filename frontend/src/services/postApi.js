@@ -1,3 +1,5 @@
+import { getAuthSession } from "./authApi";
+
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/$/, "");
 
 const parseResponse = async (response) => {
@@ -27,11 +29,18 @@ export const getPosts = async (page = 1, limit = 5) => {
 
 
 export const createPost = async (payload) => {
+  const session = getAuthSession();
+  const token = session?.accessToken;
+  const headers = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}/posts/create`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(payload),
   });
 
@@ -39,11 +48,18 @@ export const createPost = async (payload) => {
 };
 
 export const likePost = async (payload) => {
+  const session = getAuthSession();
+  const token = session?.accessToken;
+  const headers = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}/likes`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(payload),
   });
 
@@ -51,11 +67,18 @@ export const likePost = async (payload) => {
 };
 
 export const unlikePost = async (payload) => {
+  const session = getAuthSession();
+  const token = session?.accessToken;
+  const headers = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}/likes/unlike`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(payload),
   });
 
@@ -63,11 +86,18 @@ export const unlikePost = async (payload) => {
 };
 
 export const createComment = async (payload) => {
+  const session = getAuthSession();
+  const token = session?.accessToken;
+  const headers = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}/comments/create`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(payload),
   });
 

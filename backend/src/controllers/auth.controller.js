@@ -8,7 +8,7 @@ const {
 
 exports.signup = async (req, res) => {
     try {
-        const { username, email, password, bio } = req.body;
+        const { fullName, username, email, password, bio } = req.body;
 
         if (!username || !email || !password || !bio) {
             return res.status(400).json({
@@ -28,6 +28,7 @@ exports.signup = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
+            fullName: fullName || "",
             username,
             email,
             password: hashedPassword,
@@ -139,6 +140,81 @@ exports.getMe = async (req, res) => {
             success: true,
             message: "Protected route accessed successfully",
             data: user,
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: err.message,
+        });
+    }
+};
+
+exports.updateProfile = async (req, res) => {
+    try {
+        const allowedFields = [
+            "fullName",
+            "username",
+            "bio",
+            "headline",
+            "location",
+            "website",
+            "github",
+            "availability",
+            "skills",
+        ];
+        const updates = {};
+
+        for (const field of allowedFields) {
+            if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+                updates[field] = req.body[field];
+            }
+        }
+
+        if (typeof updates.skills === "string") {
+            updates.skills = updates.skills
+                .split(",")
+                .map((skill) => skill.trim())
+                .filter(Boolean);
+        }
+
+        if (Array.isArray(updates.skills)) {
+            updates.skills = updates.skills
+                .map((skill) => `${skill}`.trim())
+                .filter(Boolean);
+        }
+
+        if (typeof updates.username === "string") {
+            const existingUser = await User.findOne({
+                username: updates.username,
+                _id: { $ne: req.user.userId },
+            });
+
+            if (existingUser) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Username is already taken",
+                });
+            }
+        }
+
+        updates.updatedAt = new Date();
+
+        const user = await User.findByIdAndUpdate(req.user.userId, updates, {
+            new: true,
+            runValidators: true,
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            data: buildAuthResponse(user),
         });
     } catch (err) {
         return res.status(500).json({

@@ -29,9 +29,16 @@ const buildAuthResponse = (user) => {
     return {
         user: {
             id: user._id,
+            fullName: user.fullName || "",
             username: user.username,
             email: user.email,
             bio: user.bio,
+            headline: user.headline || "",
+            location: user.location || "",
+            website: user.website || "",
+            github: user.github || "",
+            skills: Array.isArray(user.skills) ? user.skills : [],
+            availability: user.availability || "",
         },
         accessToken: createAccessToken(user),
         refreshToken: createRefreshToken(user),

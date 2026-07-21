@@ -36,6 +36,19 @@ export const loginUser = async (payload) => {
   return parseResponse(response);
 };
 
+export const updateProfile = async (payload, accessToken) => {
+  const response = await fetch(`${API_BASE}/auth/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseResponse(response);
+};
+
 export const saveAuthSession = (authData) => {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
 };
