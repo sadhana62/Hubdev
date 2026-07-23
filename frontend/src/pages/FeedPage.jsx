@@ -12,10 +12,10 @@ import { Search } from "lucide-react";
 const normalizeComments = (comments = []) =>
   Array.isArray(comments)
     ? comments.map((comment) => ({
-        id: comment._id || comment.id || `${comment.user}-${comment.body}`,
-        user: comment.user || "developer",
-        body: comment.body || "",
-      }))
+      id: comment._id || comment.id || `${comment.user}-${comment.body}`,
+      user: comment.user || "developer",
+      body: comment.body || "",
+    }))
     : [];
 
 export default function FeedPage() {
@@ -33,22 +33,42 @@ export default function FeedPage() {
   const [commentDrafts, setCommentDrafts] = useState({});
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-// for searching and sort
-const [search, setSearch] = useState("");
-const [sort, setSort] = useState("latest");
+  // for searching and sort
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("latest");
 
   const observer = useRef(null);
 
-// pagination
+  // pagination
   const [page, setPage] = useState(1);
-// const [page, setPage] = useState(1);
-const [loading, setLoading] = useState(false);
-const [hasMore, setHasMore] = useState(true);
-// const [page, setPage] = useState(1);
+  // const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  // const [page, setPage] = useState(1);
 
-useEffect(() => {
+  const formatTime = (date) => {
+    const now = new Date();
+    const created = new Date(date);
 
-   const loadPosts = async () => {
+    const diff = Math.floor((now - created) / 1000);
+
+    if (diff < 60) return "Just now";
+
+    if (diff < 3600)
+      return `${Math.floor(diff / 60)} min ago`;
+
+    if (diff < 86400)
+      return `${Math.floor(diff / 3600)} hr ago`;
+
+    if (diff < 604800)
+      return `${Math.floor(diff / 86400)} day ago`;
+
+    return created.toLocaleDateString();
+  };
+
+  useEffect(() => {
+
+    const loadPosts = async () => {
 
       if (loading || !hasMore) return;
 
@@ -58,86 +78,87 @@ useEffect(() => {
 
         //  const response = await getPosts(page,5);
         const response = await getPosts({
-    page,
-    limit: 5,
-    search,
-    sort,
-});
+          page,
+          limit: 5,
+          search,
+          sort,
+        });
 
-         if(response.posts.length === 0){
-            setHasMore(false);
-            return;
-         }
+        if (response.posts.length === 0) {
+          setHasMore(false);
+          return;
+        }
 
-         const backendPosts = response.posts.map((p)=>{
+        const backendPosts = response.posts.map((p) => {
 
-            const normalizedComments = normalizeComments(p.comments);
+          const normalizedComments = normalizeComments(p.comments);
 
-            return{
-                id:p._id,
-                author:p.title,
-                handle:"@dev_member",
-                time:"Just now",
-                avatar:"YOUR_AVATAR_URL",
-                text:p.body,
-                likes:p.likes?.length || 0,
-                comments:normalizedComments.length,
-                commentList:normalizedComments,
-                isLiked:p.likes?.some(l=>l.user===username) || false
-            }
+          return {
+            id: p._id,
+            author: p.title,
+            handle: "@dev_member",
+            time: p.createdAt,
+            avatar: "YOUR_AVATAR_URL",
+            text: p.body,
+            likes: p.likes?.length || 0,
+            comments: normalizedComments.length,
+            commentList: normalizedComments,
+            isLiked: p.likes?.some(l => l.user === username) || false
+          }
 
-         })
+        })
 
-        if(page === 1){
-    setPosts(backendPosts);
-}
-else{
-    setPosts(prev => [...prev, ...backendPosts]);
-}
+        if (page === 1) {
+          setPosts(backendPosts);
+        }
+        else {
+          setPosts(prev => [...prev, ...backendPosts]);
+        }
 
       }
-      catch(err){
-          console.log(err);
+      catch (err) {
+        console.log(err);
       }
-      finally{
-         setLoading(false);
+      finally {
+        setLoading(false);
       }
 
-   }
+    }
 
-   loadPosts();
-
-
-
-}, [page, search, sort]);
+    loadPosts();
 
 
-useEffect(() => {
+
+  }, [page, search, sort]);
+
+
+  useEffect(() => {
+    setPosts([]);
     setPage(1);
     setHasMore(true);
-}, [search, sort]);
+  }, [search, sort]);
 
-const lastPostRef = useCallback((node) => {
+  const lastPostRef = useCallback((node) => {
 
     if (loading) return;
 
     if (observer.current) {
-        observer.current.disconnect();
+      observer.current.disconnect();
     }
 
     observer.current = new IntersectionObserver((entries) => {
 
-        if (entries[0].isIntersecting && hasMore) {
-            setPage((prev) => prev + 1);
-        }
+      if (entries[0].isIntersecting && hasMore) {
+        setPage((prev) => prev + 1);
+      }
 
     });
 
     if (node) {
-        observer.current.observe(node);
+      observer.current.observe(node);
     }
 
-}, [loading, hasMore]);
+  }, [loading, hasMore]);
 
   const handleCreatePost = async (e) => {
     e.preventDefault();
@@ -194,10 +215,10 @@ const lastPostRef = useCallback((node) => {
           current.map((post) =>
             post.id === postId
               ? {
-                  ...post,
-                  likes: response.post.likes?.length ?? post.likes,
-                  isLiked: response.liked ?? !isLiked,
-                }
+                ...post,
+                likes: response.post.likes?.length ?? post.likes,
+                isLiked: response.liked ?? !isLiked,
+              }
               : post
           )
         );
@@ -240,10 +261,10 @@ const lastPostRef = useCallback((node) => {
           current.map((post) =>
             post.id === postId
               ? {
-                  ...post,
-                  comments: updatedComments.length,
-                  commentList: updatedComments,
-                }
+                ...post,
+                comments: updatedComments.length,
+                commentList: updatedComments,
+              }
               : post
           )
         );
@@ -310,14 +331,14 @@ const lastPostRef = useCallback((node) => {
 
         {/* Profile Card */}
         <div className="relative mt-auto">
-          <div 
+          <div
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             className="bg-surface-container-low p-md rounded-xl border border-white/10 flex items-center gap-md cursor-pointer hover:bg-white/5 transition-colors"
           >
             <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-              <img 
-                className="w-full h-full object-cover" 
-                alt={username} 
+              <img
+                className="w-full h-full object-cover"
+                alt={username}
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9Cs3FnKmxvQzkJNuY_KMFgDQJIQ6iGRe0rTmqzaCCCxNexZe1OCgxF5kfCqnTpbQD3Om9UO4c8xVu1eB0R2Vb4-tqGzhiKVGopUwu5zlNvnpcwEyYefOhnbj4XCWbzC8umzJMQCtDhVWMjGSOQO70z3eQGWLI63o7LuhkupRBTqjQP6ZAPvL5o0hbUD4qlFxb9-fhANySuXcas2cTldpEC8pwr6TiF1iJYVIUv7Cfv1uRIH55TPX7fSwH7YAetDi1HFjptzqTbCY"
               />
             </div>
@@ -340,7 +361,7 @@ const lastPostRef = useCallback((node) => {
                 <span className="material-symbols-outlined text-sm">person</span>
                 View Profile
               </button>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="w-full px-4 py-3 text-left font-label-md text-label-md text-red-400 hover:bg-white/5 transition-colors flex items-center gap-sm cursor-pointer"
               >
@@ -369,14 +390,14 @@ const lastPostRef = useCallback((node) => {
           {/* Header for mobile/tablet */}
           <div className="lg:hidden flex justify-between items-center mb-xl">
             <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">DevHub</h1>
-            <div 
+            <div
               onClick={handleLogout}
               className="w-8 h-8 rounded-full overflow-hidden border border-white/10 cursor-pointer"
               title="Logout"
             >
-              <img 
-                className="w-full h-full object-cover" 
-                alt="user avatar" 
+              <img
+                className="w-full h-full object-cover"
+                alt="user avatar"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFYdPY92ED5Y6cHKbojwLSWd3QuetaRrQn8Gqfk637tnVeTRfmBI1KBzZG4l3KRnSlzy0oJkkrbgyFG-RuWnKEK8HU73yHuzEvkNGvsEDR5IBfliXgzV2Z90YKV8nHlBMW0a99B_ySxQ37WnNjDOb6LG_87nz2Lh2q0DliensnQ4NapMwVST1ZngoJyFGhz5Y4rbii3AuTjFxxexWhjoIGNk9R302-wJo4erst9uds_WJSJJThJTeNmngjYN1mgpUiAMLEntNgZek"
               />
             </div>
@@ -384,57 +405,57 @@ const lastPostRef = useCallback((node) => {
 
           {/* create a search bar and sort bar.. */}
           {/* Search & Sort */}
-<div className="bg-[#1f1f27] border border-white/10 rounded-xl p-4 mb-6 shadow-sm">
-  <div className="flex flex-col md:flex-row gap-4">
+          <div className="bg-[#1f1f27] border border-white/10 rounded-xl p-4 mb-6 shadow-sm">
+            <div className="flex flex-col md:flex-row gap-4">
 
-    {/* Search */}
-    <div className="relative flex-1">
-      <Search
-        size={18}
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-      />
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                />
 
-      <input
-        type="text"
-        placeholder="Search posts..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full bg-[#2a2a35] border border-white/10 rounded-lg py-3 pl-11 pr-4
+                <input
+                  type="text"
+                  placeholder="Search posts..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full bg-[#2a2a35] border border-white/10 rounded-lg py-3 pl-11 pr-4
         text-white placeholder-gray-400 outline-none
         focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-      />
-    </div>
+                />
+              </div>
 
-    {/* Sort */}
-    <select
-      value={sort}
-      onChange={(e) => setSort(e.target.value)}
-      className="bg-[#2a2a35] border border-white/10 rounded-lg px-4 py-3
+              {/* Sort */}
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="bg-[#2a2a35] border border-white/10 rounded-lg px-4 py-3
       text-white outline-none focus:border-blue-500 focus:ring-1
       focus:ring-blue-500 transition-all cursor-pointer"
-    >
-      <option value="latest">Latest</option>
-      <option value="oldest">Oldest</option>
-      <option value="likes">Most Liked</option>
-    </select>
+              >
+                <option value="latest">Latest</option>
+                <option value="oldest">Oldest</option>
+                <option value="likes">Most Liked</option>
+              </select>
 
-  </div>
-</div>
+            </div>
+          </div>
 
           {/* Create Post Card */}
           <div className="bg-[#1f1f27] rounded-xl p-lg border border-white/10 mb-xl shadow-sm">
             <div className="flex gap-md">
               <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                <img 
-                  className="w-full h-full object-cover" 
-                  alt="user avatar" 
+                <img
+                  className="w-full h-full object-cover"
+                  alt="user avatar"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl8Tr-b7rkNigRE1UnhaBQhjKDIyNG8jIh7YIxFQcYysPdHSomYxYS80xW1bnFszVacYc5BbOVp6FQCx8jVDMVbGvmvhJyhVrGZlVgVZeJ1gewI6A8Y3BEToZ1qHyFMRVir_zGvICmD0Nu1Z9oOINvWQqadSdAJYPgEhkzbi_xKZi84jqmciul3wWa-8fKwl4fiU-YK5sFQf8kIwB4dImRxBkrqhWEMSwT32mHnzdqqz8O7ulzlhvAvR6hMM9h7wFiiGCl07dX7a8"
                 />
               </div>
               <form onSubmit={handleCreatePost} className="flex-grow">
-                <textarea 
-                  className="w-full bg-transparent border-none focus:ring-0 text-body-lg font-body-lg text-on-surface placeholder:text-on-surface-variant/50 resize-none min-h-[80px] outline-none" 
-                  placeholder="What are you building today?" 
+                <textarea
+                  className="w-full bg-transparent border-none focus:ring-0 text-body-lg font-body-lg text-on-surface placeholder:text-on-surface-variant/50 resize-none min-h-[80px] outline-none"
+                  placeholder="What are you building today?"
                   rows="3"
                   value={newPostText}
                   onChange={(e) => setNewPostText(e.target.value)}
@@ -451,7 +472,7 @@ const lastPostRef = useCallback((node) => {
                       <span className="material-symbols-outlined">calendar_today</span>
                     </button>
                   </div>
-                  <button 
+                  <button
                     type="submit"
                     className="bg-primary text-on-primary px-xl py-sm rounded-full font-label-md text-label-md font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer"
                   >
@@ -464,7 +485,7 @@ const lastPostRef = useCallback((node) => {
 
           {/* Post Feed */}
           <div className="space-y-lg">
-            {posts.map((post,index) => (
+            {posts.map((post, index) => (
               <article key={post.id} ref={index === posts.length - 1 ? lastPostRef : null} className="bg-[#1f1f27] rounded-xl p-lg border border-white/10 shadow-sm hover:shadow-lg transition-all duration-300">
                 <div className="flex gap-md mb-md">
                   <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 cursor-pointer">
@@ -477,7 +498,7 @@ const lastPostRef = useCallback((node) => {
                           {post.author}
                         </h3>
                         <span className="font-label-sm text-label-sm text-on-surface-variant">
-                          {post.handle} • {post.time}
+                          {post.handle} • {formatTime(post.time)}
                         </span>
                       </div>
                       <button className="text-on-surface-variant hover:text-on-surface cursor-pointer">
