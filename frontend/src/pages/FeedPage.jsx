@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 // import { useRef } from "react";
 import { getAuthSession, clearAuthSession } from "../services/authApi";
 import { getPosts, createPost, likePost, unlikePost, createComment } from "../services/postApi";
@@ -20,6 +20,7 @@ const normalizeComments = (comments = []) =>
 
 export default function FeedPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const authSession = getAuthSession();
   const username = authSession?.user?.username || "developer";
   const userBio = authSession?.user?.bio || "Building tools and sharing ideas";
@@ -34,7 +35,7 @@ export default function FeedPage() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // for searching and sort
-  const [search, setSearch] = useState("");
+  const search = searchParams.get("search") || "";
   const [sort, setSort] = useState("latest");
 
   const observer = useRef(null);
@@ -286,450 +287,506 @@ export default function FeedPage() {
   };
 
   return (
-    <div className="mx-auto flex h-screen max-w-max-width overflow-hidden bg-[#0f172a] text-on-surface">
-      {/* LEFT SIDEBAR */}
-      <aside className="hidden h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-surface-container-lowest px-4 py-md lg:flex">
-        <div className="mb-xl px-2">
-          <h1 className="font-headline-md text-headline-md font-bold text-primary">DevHub</h1>
-          <p className="font-label-sm text-label-sm text-on-surface-variant opacity-70">Developer Network</p>
-        </div>
-        <nav className="flex flex-col gap-xs flex-grow">
-          <a className="bg-secondary-container/20 text-primary border-r-4 border-primary px-4 py-3 flex items-center gap-md font-label-md text-label-md transition-all duration-200" href="#">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
-            Home
-          </a>
-          <a className="text-on-surface-variant hover:bg-white/5 px-4 py-3 flex items-center gap-md font-label-md text-label-md transition-all duration-200" href="#" onClick={(e) => { e.preventDefault(); navigate("/stack"); }}>
-            <span className="material-symbols-outlined">explore</span>
-            Explore
-          </a>
-          <a className="text-on-surface-variant hover:bg-white/5 px-4 py-3 flex items-center gap-md font-label-md text-label-md transition-all duration-200" href="#">
-            <span className="material-symbols-outlined">notifications</span>
-            Notifications
-          </a>
-          <a className="text-on-surface-variant hover:bg-white/5 px-4 py-3 flex items-center gap-md font-label-md text-label-md transition-all duration-200" href="#">
-            <span className="material-symbols-outlined">mail</span>
-            Messages
-          </a>
-          <a className="text-on-surface-variant hover:bg-white/5 px-4 py-3 flex items-center gap-md font-label-md text-label-md transition-all duration-200" href="#">
-            <span className="material-symbols-outlined">bookmark</span>
-            Bookmarks
-          </a>
-        </nav>
-
-        <div className="px-2 mb-xl">
-          <button className="w-full bg-primary-container text-on-primary-container py-3 rounded-xl font-label-md text-label-md font-bold hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-primary/20 cursor-pointer">
-            New Snippet
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/profile")}
-            className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-3 font-label-md text-label-md font-bold text-on-surface transition-colors hover:bg-white/10"
-          >
-            View Profile
-          </button>
-        </div>
-
-        {/* Profile Card */}
-        <div className="relative mt-auto">
-          <div
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="bg-surface-container-low p-md rounded-xl border border-white/10 flex items-center gap-md cursor-pointer hover:bg-white/5 transition-colors"
-          >
-            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-              <img
-                className="w-full h-full object-cover"
-                alt={username}
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9Cs3FnKmxvQzkJNuY_KMFgDQJIQ6iGRe0rTmqzaCCCxNexZe1OCgxF5kfCqnTpbQD3Om9UO4c8xVu1eB0R2Vb4-tqGzhiKVGopUwu5zlNvnpcwEyYefOhnbj4XCWbzC8umzJMQCtDhVWMjGSOQO70z3eQGWLI63o7LuhkupRBTqjQP6ZAPvL5o0hbUD4qlFxb9-fhANySuXcas2cTldpEC8pwr6TiF1iJYVIUv7Cfv1uRIH55TPX7fSwH7YAetDi1HFjptzqTbCY"
-              />
-            </div>
-            <div className="flex-grow overflow-hidden">
-              <div className="font-label-md text-label-md font-bold text-on-surface truncate">
-                {displayName}
-              </div>
-              <div className="font-label-sm text-label-sm text-on-surface-variant truncate">@{username}</div>
-              <div className="mt-1 font-label-sm text-label-sm text-on-surface-variant truncate">{userBio}</div>
-            </div>
-            <span className="material-symbols-outlined text-on-surface-variant text-sm">more_horiz</span>
-          </div>
-
-          {showProfileMenu && (
-            <div className="absolute bottom-16 left-0 right-0 bg-[#1E293B] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50">
-              <button
-                onClick={() => navigate("/profile")}
-                className="w-full px-4 py-3 text-left font-label-md text-label-md text-on-surface hover:bg-white/5 transition-colors flex items-center gap-sm cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-sm">person</span>
-                View Profile
-              </button>
-              <button
-                onClick={handleLogout}
-                className="w-full px-4 py-3 text-left font-label-md text-label-md text-red-400 hover:bg-white/5 transition-colors flex items-center gap-sm cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-sm">logout</span>
-                Logout Session
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-xs mt-lg pb-md">
-          <a className="text-on-surface-variant hover:text-on-surface px-4 py-1 flex items-center gap-md font-label-sm text-label-sm transition-all" href="#">
-            <span className="material-symbols-outlined text-sm">settings</span>
-            Settings
-          </a>
-          <a className="text-on-surface-variant hover:text-on-surface px-4 py-1 flex items-center gap-md font-label-sm text-label-sm transition-all" href="#">
-            <span className="material-symbols-outlined text-sm">help</span>
-            Support
-          </a>
-        </div>
-      </aside>
-
-      {/* CENTER FEED */}
-      <main className="min-w-0 flex-1 overflow-y-auto border-r border-white/5">
-        <div className="mx-auto w-full max-w-2xl px-4 py-xl md:px-lg">
-          {/* Header for mobile/tablet */}
-          <div className="lg:hidden flex justify-between items-center mb-xl">
-            <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">DevHub</h1>
-            <div
-              onClick={handleLogout}
-              className="w-8 h-8 rounded-full overflow-hidden border border-white/10 cursor-pointer"
-              title="Logout"
-            >
-              <img
-                className="w-full h-full object-cover"
-                alt="user avatar"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFYdPY92ED5Y6cHKbojwLSWd3QuetaRrQn8Gqfk637tnVeTRfmBI1KBzZG4l3KRnSlzy0oJkkrbgyFG-RuWnKEK8HU73yHuzEvkNGvsEDR5IBfliXgzV2Z90YKV8nHlBMW0a99B_ySxQ37WnNjDOb6LG_87nz2Lh2q0DliensnQ4NapMwVST1ZngoJyFGhz5Y4rbii3AuTjFxxexWhjoIGNk9R302-wJo4erst9uds_WJSJJThJTeNmngjYN1mgpUiAMLEntNgZek"
-              />
-            </div>
-          </div>
-
-          {/* create a search bar and sort bar.. */}
-          {/* Search & Sort */}
-          <div className="bg-[#1f1f27] border border-white/10 rounded-xl p-4 mb-6 shadow-sm">
-            <div className="flex flex-col md:flex-row gap-4">
-
-              {/* Search */}
-              <div className="relative flex-1">
-                <Search
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Search posts..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-[#2a2a35] border border-white/10 rounded-lg py-3 pl-11 pr-4
-        text-white placeholder-gray-400 outline-none
-        focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                />
-              </div>
-
-              {/* Sort */}
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="bg-[#2a2a35] border border-white/10 rounded-lg px-4 py-3
-      text-white outline-none focus:border-blue-500 focus:ring-1
-      focus:ring-blue-500 transition-all cursor-pointer"
-              >
-                <option value="latest">Latest</option>
-                <option value="oldest">Oldest</option>
-                <option value="likes">Most Liked</option>
-              </select>
-
-            </div>
-          </div>
-
-          {/* Create Post Card */}
-          <div className="bg-[#1f1f27] rounded-xl p-lg border border-white/10 mb-xl shadow-sm">
-            <div className="flex gap-md">
-              <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                <img
-                  className="w-full h-full object-cover"
-                  alt="user avatar"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl8Tr-b7rkNigRE1UnhaBQhjKDIyNG8jIh7YIxFQcYysPdHSomYxYS80xW1bnFszVacYc5BbOVp6FQCx8jVDMVbGvmvhJyhVrGZlVgVZeJ1gewI6A8Y3BEToZ1qHyFMRVir_zGvICmD0Nu1Z9oOINvWQqadSdAJYPgEhkzbi_xKZi84jqmciul3wWa-8fKwl4fiU-YK5sFQf8kIwB4dImRxBkrqhWEMSwT32mHnzdqqz8O7ulzlhvAvR6hMM9h7wFiiGCl07dX7a8"
-                />
-              </div>
-              <form onSubmit={handleCreatePost} className="flex-grow">
-                <textarea
-                  className="w-full bg-transparent border-none focus:ring-0 text-body-lg font-body-lg text-on-surface placeholder:text-on-surface-variant/50 resize-none min-h-[80px] outline-none"
-                  placeholder="What are you building today?"
-                  rows="3"
-                  value={newPostText}
-                  onChange={(e) => setNewPostText(e.target.value)}
-                />
-                <div className="flex justify-between items-center pt-md border-t border-white/5">
-                  <div className="flex gap-sm text-primary">
-                    <button type="button" className="p-sm hover:bg-primary/10 rounded-full transition-colors cursor-pointer">
-                      <span className="material-symbols-outlined">image</span>
-                    </button>
-                    <button type="button" className="p-sm hover:bg-primary/10 rounded-full transition-colors cursor-pointer">
-                      <span className="material-symbols-outlined">code</span>
-                    </button>
-                    <button type="button" className="p-sm hover:bg-primary/10 rounded-full transition-colors cursor-pointer">
-                      <span className="material-symbols-outlined">calendar_today</span>
-                    </button>
-                  </div>
-                  <button
-                    type="submit"
-                    className="bg-primary text-on-primary px-xl py-sm rounded-full font-label-md text-label-md font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer"
-                  >
-                    Post
-                  </button>
+    <div className="w-full bg-[#f4f2ee] text-black/90 font-sans pb-16 pt-6">
+      {/* MAIN GRID LAYOUT */}
+      <div className="max-w-[1128px] mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          
+          {/* LEFT SIDEBAR PROFILE CARD */}
+          <aside className="col-span-12 md:col-span-4 lg:col-span-3 flex flex-col gap-4">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              {/* Cover Banner */}
+              <div className="h-14 bg-gradient-to-r f to-indigo-500 relative rounded-t-lg"></div>
+              
+              {/* Avatar overlapping */}
+              <div className="flex justify-center -mt-[36px] px-3">
+                <div className="w-[72px] h-[72px] rounded-full border-[2px] border-white overflow-hidden bg-white shadow-md">
+                  <img
+                    className="w-full h-full object-cover"
+                    alt={username}
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9Cs3FnKmxvQzkJNuY_KMFgDQJIQ6iGRe0rTmqzaCCCxNexZe1OCgxF5kfCqnTpbQD3Om9UO4c8xVu1eB0R2Vb4-tqGzhiKVGopUwu5zlNvnpcwEyYefOhnbj4XCWbzC8umzJMQCtDhVWMjGSOQO70z3eQGWLI63o7LuhkupRBTqjQP6ZAPvL5o0hbUD4qlFxb9-fhANySuXcas2cTldpEC8pwr6TiF1iJYVIUv7Cfv1uRIH55TPX7fSwH7YAetDi1HFjptzqTbCY"
+                  />
                 </div>
-              </form>
-            </div>
-          </div>
+              </div>
+              
+              {/* Profile Details */}
+              <div className="px-3 py-3 border-b border-gray-200 text-center">
+                <h2 
+                  onClick={() => navigate("/profile")}
+                  className="font-semibold text-[16px] text-black/90 hover:underline cursor-pointer"
+                >
+                  {displayName}
+                </h2>
+                <p className="text-[12px] text-black/60 font-sans mt-1 line-clamp-2">
+                  {userBio}
+                </p>
+              </div>
 
-          {/* Post Feed */}
-          <div className="space-y-lg">
-            {posts.map((post, index) => (
-              <article key={post.id} ref={index === posts.length - 1 ? lastPostRef : null} className="bg-[#1f1f27] rounded-xl p-lg border border-white/10 shadow-sm hover:shadow-lg transition-all duration-300">
-                <div className="flex gap-md mb-md">
-                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 cursor-pointer">
-                    <img className="w-full h-full object-cover" alt={post.author} src={post.avatar} />
-                  </div>
-                  <div className="flex-grow">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-body-md text-body-md font-bold text-on-surface hover:underline cursor-pointer">
-                          {post.author}
-                        </h3>
-                        <span className="font-label-sm text-label-sm text-on-surface-variant">
-                          {post.handle} • {formatTime(post.time)}
-                        </span>
-                      </div>
-                      <button className="text-on-surface-variant hover:text-on-surface cursor-pointer">
-                        <span className="material-symbols-outlined">more_vert</span>
+              {/* Stats Section */}
+              <div className="py-3 text-[12px] text-black/60">
+                <div className="hover:bg-gray-100 px-3 py-1.5 flex justify-between items-center cursor-pointer">
+                  <span>Profile viewers</span>
+                  <span className="font-semibold text-[#0a66c2]">142</span>
+                </div>
+                <div className="hover:bg-gray-100 px-3 py-1.5 flex justify-between items-center cursor-pointer">
+                  <span>Post impressions</span>
+                  <span className="font-semibold text-[#0a66c2]">1,024</span>
+                </div>
+              </div>
+
+              {/* My Items */}
+              <div 
+                className="hover:bg-gray-100 px-3 py-3 border-t border-gray-200 flex items-center gap-2 text-[12px] font-semibold text-black/60 cursor-pointer"
+                onClick={() => navigate("/profile")}
+              >
+                <span className="material-symbols-outlined text-[18px]">bookmark</span>
+                My items
+              </div>
+            </div>
+
+            {/* Desktop Quick Shortcuts */}
+            <div className="hidden md:flex bg-white rounded-lg border border-gray-200 p-3 flex-col gap-2 shadow-sm text-[12px] text-black/60">
+              <p className="font-semibold text-black/90 text-[11px] uppercase tracking-wider">Recent</p>
+              <a href="#" className="flex items-center gap-1 hover:bg-gray-100 p-1.5 rounded transition-colors">
+                <span className="text-gray-400">#</span> rustlang
+              </a>
+              <a href="#" className="flex items-center gap-1 hover:bg-gray-100 p-1.5 rounded transition-colors">
+                <span className="text-gray-400">#</span> typescript
+              </a>
+              <a href="#" className="flex items-center gap-1 hover:bg-gray-100 p-1.5 rounded transition-colors">
+                <span className="text-gray-400">#</span> nextjs
+              </a>
+              <hr className="border-gray-200 my-1" />
+              <button 
+                onClick={() => navigate("/profile")}
+                className="text-[#0a66c2] hover:underline font-semibold text-left"
+              >
+                View Profile Details
+              </button>
+            </div>
+          </aside>
+
+          {/* CENTER FEED */}
+          <main className="col-span-12 md:col-span-8 lg:col-span-6 flex flex-col gap-4">
+            
+            {/* Create Post Card */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+              <div className="flex gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                  <img
+                    className="w-full h-full object-cover"
+                    alt="user avatar"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl8Tr-b7rkNigRE1UnhaBQhjKDIyNG8jIh7YIxFQcYysPdHSomYxYS80xW1bnFszVacYc5BbOVp6FQCx8jVDMVbGvmvhJyhVrGZlVgVZeJ1gewI6A8Y3BEToZ1qHyFMRVir_zGvICmD0Nu1Z9oOINvWQqadSdAJYPgEhkzbi_xKZi84jqmciul3wWa-8fKwl4fiU-YK5sFQf8kIwB4dImRxBkrqhWEMSwT32mHnzdqqz8O7ulzlhvAvR6hMM9h7wFiiGCl07dX7a8"
+                  />
+                </div>
+                <form onSubmit={handleCreatePost} className="flex-grow">
+                  <textarea
+                    className="w-full bg-transparent border-0 text-sm text-black/90 placeholder-black/45 resize-none min-h-[60px] outline-none focus:ring-0 focus:outline-none p-1"
+                    placeholder="What are you building today?"
+                    rows="3"
+                    value={newPostText}
+                    onChange={(e) => setNewPostText(e.target.value)}
+                  />
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-100 mt-2">
+                    {/* Media attachments triggers */}
+                    <div className="flex gap-1 text-black/60">
+                      <button 
+                        type="button" 
+                        className="flex items-center gap-1.5 px-3 py-2 hover:bg-gray-100 rounded transition-colors text-[#0a66c2] font-semibold text-xs cursor-pointer"
+                        title="Photo"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">image</span>
+                        <span className="hidden sm:inline">Photo</span>
+                      </button>
+                      <button 
+                        type="button" 
+                        className="flex items-center gap-1.5 px-3 py-2 hover:bg-gray-100 rounded transition-colors text-[#5f9b41] font-semibold text-xs cursor-pointer"
+                        title="Video"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">video_library</span>
+                        <span className="hidden sm:inline">Video</span>
+                      </button>
+                      <button 
+                        type="button" 
+                        className="flex items-center gap-1.5 px-3 py-2 hover:bg-gray-100 rounded transition-colors text-[#c37d16] font-semibold text-xs cursor-pointer"
+                        title="Event"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">calendar_today</span>
+                        <span className="hidden sm:inline">Event</span>
                       </button>
                     </div>
+
+                    <button
+                      type="submit"
+                      disabled={!newPostText.trim()}
+                      className="bg-[#0a66c2] hover:bg-[#004182] text-white px-5 py-1.5 rounded-full font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Post
+                    </button>
                   </div>
+                </form>
+              </div>
+            </div>
+
+            {/* Sort Toolbar */}
+            <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-black/90">Feed sorting</p>
+                  <p className="text-xs text-black/55">Choose how posts are ordered in your feed.</p>
                 </div>
-                <p className="font-body-md text-body-md text-on-surface mb-md whitespace-pre-line">
-                  {post.text}
-                </p>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="feed-sort" className="text-xs font-medium text-black/65">
+                    Sort by
+                  </label>
+                  <select
+                    id="feed-sort"
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                    aria-label="Sort feed posts"
+                    className="min-w-[150px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-black/90 font-medium outline-none cursor-pointer focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/15"
+                  >
+                    <option value="latest">Latest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="likes">Most Liked</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-                {/* Optional code snippet */}
-                {post.code && (
-                  <div className="bg-[#0d0d15] rounded-lg overflow-hidden mb-md border border-white/10">
-                    <div className="flex justify-between items-center px-md py-sm bg-white/5">
-                      <span className="font-label-sm text-label-sm text-on-surface-variant">{post.code.filename}</span>
-                      <span className="material-symbols-outlined text-sm text-on-surface-variant cursor-pointer hover:text-on-surface">content_copy</span>
+            {/* Post Feed */}
+            <div className="flex flex-col gap-4">
+              {posts.map((post, index) => (
+                <article 
+                  key={post.id} 
+                  ref={index === posts.length - 1 ? lastPostRef : null} 
+                  className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+                >
+                  {/* Post Header */}
+                  <div className="flex gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 cursor-pointer">
+                      <img className="w-full h-full object-cover" alt={post.author} src={post.avatar} />
                     </div>
-                    <pre className="p-md font-label-sm text-label-sm text-[#c0c1ff] overflow-x-auto custom-scrollbar">
-                      <code>{post.code.content}</code>
-                    </pre>
-                  </div>
-                )}
-
-                {/* Optional image attachment */}
-                {post.image && (
-                  <div className="rounded-xl overflow-hidden mb-md border border-white/10 relative group cursor-pointer">
-                    <img className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-105" alt="Post preview" src={post.image} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="flex items-center justify-between w-full">
+                    <div className="flex-grow">
+                      <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-headline-md text-headline-md text-white">Nebula Dash v0.1.0</h4>
-                          <p className="font-body-sm text-body-sm text-white/70">github.com/marcus-t/nebula</p>
+                          <h3 className="font-semibold text-sm text-black/95 hover:text-[#0a66c2] hover:underline cursor-pointer">
+                            {post.author}
+                          </h3>
+                          <p className="text-xs text-black/60 flex items-center gap-1.5">
+                            <span>{post.handle}</span>
+                            <span>•</span>
+                            <span>{formatTime(post.time)}</span>
+                            <span>•</span>
+                            <span className="material-symbols-outlined text-[14px]">public</span>
+                          </p>
                         </div>
-                        <button className="bg-white/10 backdrop-blur-md border border-white/20 p-sm rounded-full text-white cursor-pointer">
-                          <span className="material-symbols-outlined">open_in_new</span>
+                        <button className="text-black/60 hover:text-black/90 rounded-full p-1 hover:bg-gray-100 transition-colors cursor-pointer">
+                          <span className="material-symbols-outlined">more_vert</span>
                         </button>
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* Interaction Bar */}
-                <div className="flex justify-between items-center pt-md border-t border-white/5 text-on-surface-variant">
-                  <div className="flex gap-lg">
+                  {/* Post Content */}
+                  <p className="text-sm text-black/90 mb-3 whitespace-pre-line leading-relaxed">
+                    {post.text}
+                  </p>
+
+                  {/* Code snippet rendering (Premium Gist-style) */}
+                  {post.code && (
+                    <div className="bg-[#f8f9fa] rounded-lg overflow-hidden mb-3 border border-gray-200">
+                      <div className="flex justify-between items-center px-4 py-2 bg-gray-100 border-b border-gray-200 text-xs text-black/60">
+                        <span className="font-semibold">{post.code.filename}</span>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(post.code.content);
+                          }}
+                          className="flex items-center gap-1 text-black/60 hover:text-[#0a66c2] transition-colors cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm">content_copy</span>
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                      <pre className="p-4 font-mono text-xs text-[#2b2b2b] overflow-x-auto bg-[#fafafa]">
+                        <code>{post.code.content}</code>
+                      </pre>
+                    </div>
+                  )}
+
+                  {/* Image attachment rendering */}
+                  {post.image && (
+                    <div className="rounded-lg overflow-hidden mb-3 border border-gray-200 relative group cursor-pointer">
+                      <img className="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-102" alt="Post preview" src={post.image} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="flex items-center justify-between w-full">
+                          <div>
+                            <h4 className="font-bold text-sm text-white">Nebula Dash v0.1.0</h4>
+                            <p className="text-xs text-white/70">github.com/marcus-t/nebula</p>
+                          </div>
+                          <button className="bg-white/20 backdrop-blur-md border border-white/30 p-1.5 rounded-full text-white cursor-pointer hover:bg-white/30 transition-colors">
+                            <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Likes/Comments stats count row */}
+                  <div className="flex justify-between items-center pb-2 text-[12px] text-black/60 border-b border-gray-100 mb-2">
+                    <div className="flex items-center gap-1">
+                      {/* LinkedIn overlap reactions */}
+                      <span className="inline-flex">
+                        <span className="w-4 h-4 bg-[#0a66c2] text-white rounded-full flex items-center justify-center text-[8px] z-10 border border-white">
+                          👍
+                        </span>
+                        {post.likes > 2 && (
+                          <span className="w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] -ml-1.5 border border-white z-0">
+                            ❤️
+                          </span>
+                        )}
+                      </span>
+                      <span className="ml-1 hover:text-[#0a66c2] hover:underline cursor-pointer">
+                        {post.likes} reactions
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => handleCommentPost(post.id)}
+                      className="hover:text-[#0a66c2] hover:underline cursor-pointer"
+                    >
+                      {post.comments} comments
+                    </button>
+                  </div>
+
+                  {/* Interaction Buttons Bar */}
+                  <div className="flex justify-between items-center text-black/60 font-semibold text-sm">
                     <button
                       type="button"
                       onClick={() => handleLikePost(post.id)}
-                      className="flex items-center gap-xs hover:text-primary transition-colors group cursor-pointer"
+                      className={`flex items-center justify-center gap-2 hover:bg-gray-100 py-2 rounded flex-1 cursor-pointer transition-colors ${post.isLiked ? "text-[#0a66c2]" : ""}`}
                     >
-                      <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">
-                        {post.isLiked ? "favorite" : "favorite_border"}
+                      <span className="material-symbols-outlined text-[20px]">
+                        {post.isLiked ? "thumb_up" : "thumb_up"}
                       </span>
-                      <span className="font-label-sm text-label-sm">{post.likes}</span>
+                      <span>Like</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleCommentPost(post.id)}
-                      className="flex items-center gap-xs hover:text-primary transition-colors group cursor-pointer"
+                      className="flex items-center justify-center gap-2 hover:bg-gray-100 py-2 rounded flex-1 cursor-pointer transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">chat_bubble</span>
-                      <span className="font-label-sm text-label-sm">{post.comments}</span>
+                      <span className="material-symbols-outlined text-[20px]">comment</span>
+                      <span>Comment</span>
                     </button>
-                    <button type="button" className="flex items-center gap-xs hover:text-primary transition-colors group cursor-pointer">
-                      <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">share</span>
+                    <button 
+                      type="button" 
+                      className="flex items-center justify-center gap-2 hover:bg-gray-100 py-2 rounded flex-1 cursor-pointer transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">share</span>
+                      <span>Repost</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      className="flex items-center justify-center gap-2 hover:bg-gray-100 py-2 rounded flex-1 cursor-pointer transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">send</span>
+                      <span>Send</span>
                     </button>
                   </div>
-                  <button type="button" className="hover:text-primary transition-colors cursor-pointer">
-                    <span className="material-symbols-outlined text-[20px]">bookmark</span>
-                  </button>
-                </div>
 
-                {activeCommentPostId === post.id ? (
-                  <div className="mt-md border-t border-white/5 pt-md">
-                    {post.commentList?.length ? (
-                      <div className="mb-md space-y-sm">
-                        {post.commentList.map((comment) => (
-                          <div key={comment.id} className="rounded-lg border border-white/10 bg-white/5 px-md py-sm">
-                            <p className="font-label-sm text-label-sm text-primary">@{comment.user}</p>
-                            <p className="mt-xs text-body-sm text-on-surface">{comment.body}</p>
+                  {/* Comments Section */}
+                  {activeCommentPostId === post.id ? (
+                    <div className="mt-3 border-t border-gray-100 pt-3 flex flex-col gap-3">
+                      {/* Comment Input */}
+                      <div className="flex gap-2">
+                        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                          <img
+                            className="w-full h-full object-cover"
+                            alt="avatar"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl8Tr-b7rkNigRE1UnhaBQhjKDIyNG8jIh7YIxFQcYysPdHSomYxYS80xW1bnFszVacYc5BbOVp6FQCx8jVDMVbGvmvhJyhVrGZlVgVZeJ1gewI6A8Y3BEToZ1qHyFMRVir_zGvICmD0Nu1Z9oOINvWQqadSdAJYPgEhkzbi_xKZi84jqmciul3wWa-8fKwl4fiU-YK5sFQf8kIwB4dImRxBkrqhWEMSwT32mHnzdqqz8O7ulzlhvAvR6hMM9h7wFiiGCl07dX7a8"
+                          />
+                        </div>
+                        <div className="flex-grow flex flex-col gap-2">
+                          <textarea
+                            className="w-full min-h-[50px] rounded-lg bg-gray-100 border border-gray-300 px-3 py-2 text-xs text-black outline-none focus:border-[#0a66c2] focus:bg-white resize-none"
+                            placeholder="Add a comment..."
+                            value={commentDrafts[post.id] || ""}
+                            onChange={(e) => handleCommentDraftChange(post.id, e.target.value)}
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setActiveCommentPostId(null)}
+                              className="px-3 py-1 text-xs font-semibold text-black/60 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSubmitComment(post.id)}
+                              className="px-3 py-1 bg-[#0a66c2] text-white text-xs font-bold rounded-full hover:bg-[#004182] transition-colors"
+                            >
+                              Post
+                            </button>
                           </div>
-                        ))}
+                        </div>
                       </div>
-                    ) : (
-                      <p className="mb-md text-body-sm text-on-surface-variant">No comments yet. Start the conversation.</p>
-                    )}
-                    <label className="block font-label-sm text-label-sm text-on-surface-variant mb-sm" htmlFor={`comment-${post.id}`}>
-                      Add a comment
-                    </label>
-                    <textarea
-                      id={`comment-${post.id}`}
-                      className="w-full min-h-[84px] rounded-lg bg-[#0d0d15] border border-white/10 px-md py-sm text-body-sm text-on-surface outline-none focus:border-primary resize-none"
-                      placeholder="Share a reply..."
-                      value={commentDrafts[post.id] || ""}
-                      onChange={(e) => handleCommentDraftChange(post.id, e.target.value)}
-                    />
-                    <div className="mt-sm flex justify-end gap-sm">
-                      <button
-                        type="button"
-                        onClick={() => setActiveCommentPostId(null)}
-                        className="px-md py-sm rounded-full border border-white/10 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSubmitComment(post.id)}
-                        className="px-md py-sm rounded-full bg-primary text-on-primary text-label-sm font-label-sm font-bold hover:opacity-90 transition-opacity"
-                      >
-                        Post comment
-                      </button>
+
+                      {/* Comments List */}
+                      {post.commentList?.length ? (
+                        <div className="space-y-3 mt-1">
+                          {post.commentList.map((comment) => (
+                            <div key={comment.id} className="flex gap-2 items-start">
+                              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                                <span className="material-symbols-outlined text-[32px] text-gray-400">account_circle</span>
+                              </div>
+                              <div className="bg-gray-100 rounded-lg p-3 text-xs flex-grow shadow-sm">
+                                <p className="font-semibold text-black/90 mb-1">@{comment.user}</p>
+                                <p className="text-black/80">{comment.body}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-black/60 italic text-center py-2">No comments yet. Be the first to comment.</p>
+                      )}
                     </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </main>
+
+          {/* RIGHT SIDEBAR */}
+          <aside className="hidden lg:flex lg:col-span-3 flex-col gap-4">
+            
+            {/* News Widget */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
+                <h2 className="font-bold text-sm text-black/90">DevHub News</h2>
+                <span className="material-symbols-outlined text-gray-500 text-sm">info</span>
+              </div>
+              <ul className="flex flex-col gap-3 text-xs">
+                <li className="hover:bg-gray-50 p-1 rounded cursor-pointer transition-colors">
+                  <h4 className="font-semibold text-black/90 flex items-start gap-1">
+                    <span className="text-blue-500 font-bold text-sm leading-none">•</span>
+                    Rust 2026 Roadmap Released
+                  </h4>
+                  <p className="text-black/45 pl-3">2d ago • 14,043 readers</p>
+                </li>
+                <li className="hover:bg-gray-50 p-1 rounded cursor-pointer transition-colors">
+                  <h4 className="font-semibold text-black/90 flex items-start gap-1">
+                    <span className="text-blue-500 font-bold text-sm leading-none">•</span>
+                    Vite vs Turbopack in DevHub
+                  </h4>
+                  <p className="text-black/45 pl-3">3d ago • 8,432 readers</p>
+                </li>
+                <li className="hover:bg-gray-50 p-1 rounded cursor-pointer transition-colors">
+                  <h4 className="font-semibold text-black/90 flex items-start gap-1">
+                    <span className="text-blue-500 font-bold text-sm leading-none">•</span>
+                    Wasm-based Microfrontends
+                  </h4>
+                  <p className="text-black/45 pl-3">5d ago • 4,128 readers</p>
+                </li>
+              </ul>
+            </div>
+
+            {/* Who to Follow Widget */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+              <h2 className="font-bold text-sm text-black/90 mb-3">Add to your feed</h2>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                    <img className="w-full h-full object-cover" alt="Devon Webb" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCx0fwapccQIMUyEXTzjFNb5huPqk_EryuGlvfU1sMpviOyEKqLaZ3zmfUBue5-IRUDnF6kVYeVYMU_Ppmr8gG6XpFg_3fh94Eb_6_5DoSivukexLCaZWEc2aE95U7xIUUBINfHf7xahb9MAIOLCET-cYqmtecpd_SAUFEGij-v-Qmk7ucft_QOZUdVTq6afR0R0wAK5ZoleU9IbFVnUGSHSA_c6djgsftF2FDDsGBf7YMAiolV7-nNnP1egNHRNmItYHtqpnnCTZ8" />
                   </div>
-                ) : null}
-              </article>
-            ))}
-          </div>
+                  <div className="flex-grow overflow-hidden text-xs">
+                    <p className="font-bold text-black/90 truncate">Devon Webb</p>
+                    <p className="text-black/45 truncate">@dwebb_core</p>
+                    <button className="mt-1 border border-black/60 hover:bg-black/5 hover:border-black text-black/75 px-3 py-0.5 rounded-full font-bold flex items-center gap-1 transition-all cursor-pointer">
+                      <span className="material-symbols-outlined text-xs">add</span> Follow
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                    <img className="w-full h-full object-cover" alt="Jamie Park" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoTLqFWwoBXvcTvDc035igytJe_gj41BxhyW421kW4NpOoGaPN1dOUA7frxirkQeyJfUlU8nDSiMDBf2XC1SvRG5Va667HVSZKkHB8wqyDImHegGTMy3pbTbFjsTfVe9MSICUCC9GVaL-4oHsOADOhdIcnuNomVrfza_1MnEgMapTw3Qv44FAaobQFYKHTfskoKoAVF1u1oY5W61hBzc_uAkU9qwEthcnpT3uQi21Urt59QQjx83mMjYKvbPYfDLED-H5ec7q1QWE" />
+                  </div>
+                  <div className="flex-grow overflow-hidden text-xs">
+                    <p className="font-bold text-black/90 truncate">Jamie Park</p>
+                    <p className="text-black/45 truncate">@jamie_scripts</p>
+                    <button className="mt-1 border border-black/60 hover:bg-black/5 hover:border-black text-black/75 px-3 py-0.5 rounded-full font-bold flex items-center gap-1 transition-all cursor-pointer">
+                      <span className="material-symbols-outlined text-xs">add</span> Follow
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Trending Projects Widget */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm text-xs">
+              <h2 className="font-bold text-sm text-black/90 mb-3">Top Projects</h2>
+              <div className="flex flex-col gap-3">
+                <div className="hover:bg-gray-50 p-2 rounded border border-gray-100 cursor-pointer transition-colors">
+                  <div className="flex justify-between items-center mb-1">
+                    <h3 className="font-semibold text-[#0a66c2] hover:underline">PrismORM</h3>
+                    <span className="flex items-center text-gray-500 font-sans text-[10px]">
+                      ⭐ 4.2k
+                    </span>
+                  </div>
+                  <p className="text-black/60 line-clamp-2">High-performance Rust ORM with migrations.</p>
+                </div>
+                
+                <div className="hover:bg-gray-50 p-2 rounded border border-gray-100 cursor-pointer transition-colors">
+                  <div className="flex justify-between items-center mb-1">
+                    <h3 className="font-semibold text-[#0a66c2] hover:underline">FluxUI</h3>
+                    <span className="flex items-center text-gray-500 font-sans text-[10px]">
+                      ⭐ 1.8k
+                    </span>
+                  </div>
+                  <p className="text-black/60 line-clamp-2">Motion-driven Tailwind components.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* LinkedIn-style Footer */}
+            <footer className="text-center text-[11px] text-black/45 mt-2 flex flex-col gap-2">
+              <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 px-2">
+                <a className="hover:text-[#0a66c2] hover:underline" href="#">About</a>
+                <a className="hover:text-[#0a66c2] hover:underline" href="#">Accessibility</a>
+                <a className="hover:text-[#0a66c2] hover:underline" href="#">Help Center</a>
+                <a className="hover:text-[#0a66c2] hover:underline" href="#">Privacy &amp; Terms</a>
+                <a className="hover:text-[#0a66c2] hover:underline" href="#">API</a>
+                <a className="hover:text-[#0a66c2] hover:underline" href="#">GitHub</a>
+              </div>
+              <p className="mt-1 font-semibold flex items-center justify-center gap-1">
+                <span className="text-[#0a66c2] font-bold text-xs">DevHub</span> Corporation © 2026
+              </p>
+            </footer>
+          </aside>
+
         </div>
-      </main>
+      </div>
 
-      {/* RIGHT SIDEBAR */}
-      <aside className="hidden h-screen w-80 shrink-0 overflow-hidden border-l border-white/10 bg-[#0f172a] p-lg xl:block">
-        {/* Trending Tech */}
-        <section className="mb-xxl">
-          <h2 className="font-headline-md text-headline-md font-bold text-on-surface mb-lg">Trending Tech</h2>
-          <div className="flex flex-wrap gap-sm">
-            <span className="bg-primary/10 text-primary border border-primary/20 px-md py-xs rounded-full font-label-sm text-label-sm hover:bg-primary/20 cursor-pointer transition-colors">#rustlang</span>
-            <span className="bg-primary/10 text-primary border border-primary/20 px-md py-xs rounded-full font-label-sm text-label-sm hover:bg-primary/20 cursor-pointer transition-colors">#web3</span>
-            <span className="bg-primary/10 text-primary border border-primary/20 px-md py-xs rounded-full font-label-sm text-label-sm hover:bg-primary/20 cursor-pointer transition-colors">#nextjs</span>
-            <span className="bg-primary/10 text-primary border border-primary/20 px-md py-xs rounded-full font-label-sm text-label-sm hover:bg-primary/20 cursor-pointer transition-colors">#serverless</span>
-            <span className="bg-primary/10 text-primary border border-primary/20 px-md py-xs rounded-full font-label-sm text-label-sm hover:bg-primary/20 cursor-pointer transition-colors">#wasm</span>
-            <span className="bg-primary/10 text-primary border border-primary/20 px-md py-xs rounded-full font-label-sm text-label-sm hover:bg-primary/20 cursor-pointer transition-colors">#typescript</span>
-          </div>
-        </section>
-
-        {/* Suggested Developers */}
-        <section className="mb-xxl">
-          <div className="flex justify-between items-center mb-lg">
-            <h2 className="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wider">Who to Follow</h2>
-            <button className="text-primary text-label-sm font-label-sm hover:underline cursor-pointer">Show more</button>
-          </div>
-          <div className="space-y-md">
-            <div className="flex items-center gap-md">
-              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                <img className="w-full h-full object-cover" alt="Devon Webb" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCx0fwapccQIMUyEXTzjFNb5huPqk_EryuGlvfU1sMpviOyEKqLaZ3zmfUBue5-IRUDnF6kVYeVYMU_Ppmr8gG6XpFg_3fh94Eb_6_5DoSivukexLCaZWEc2aE95U7xIUUBINfHf7xahb9MAIOLCET-cYqmtecpd_SAUFEGij-v-Qmk7ucft_QOZUdVTq6afR0R0wAK5ZoleU9IbFVnUGSHSA_c6djgsftF2FDDsGBf7YMAiolV7-nNnP1egNHRNmItYHtqpnnCTZ8" />
-              </div>
-              <div className="flex-grow overflow-hidden">
-                <div className="font-label-md text-label-md font-bold text-on-surface truncate">Devon Webb</div>
-                <div className="font-label-sm text-label-sm text-on-surface-variant truncate">@dwebb_core</div>
-              </div>
-              <button className="bg-on-surface text-surface px-md py-xs rounded-full font-label-sm text-label-sm font-bold hover:opacity-80 transition-opacity cursor-pointer">
-                Follow
-              </button>
-            </div>
-            <div className="flex items-center gap-md">
-              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                <img className="w-full h-full object-cover" alt="Jamie Park" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoTLqFWwoBXvcTvDc035igytJe_gj41BxhyW421kW4NpOoGaPN1dOUA7frxirkQeyJfUlU8nDSiMDBf2XC1SvRG5Va667HVSZKkHB8wqyDImHegGTMy3pbTbFjsTfVe9MSICUCC9GVaL-4oHsOADOhdIcnuNomVrfza_1MnEgMapTw3Qv44FAaobQFYKHTfskoKoAVF1u1oY5W61hBzc_uAkU9qwEthcnpT3uQi21Urt59QQjx83mMjYKvbPYfDLED-H5ec7q1QWE" />
-              </div>
-              <div className="flex-grow overflow-hidden">
-                <div className="font-label-md text-label-md font-bold text-on-surface truncate">Jamie Park</div>
-                <div className="font-label-sm text-label-sm text-on-surface-variant truncate">@jamie_scripts</div>
-              </div>
-              <button className="bg-on-surface text-surface px-md py-xs rounded-full font-label-sm text-label-sm font-bold hover:opacity-80 transition-opacity cursor-pointer">
-                Follow
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Latest Projects */}
-        <section>
-          <div className="flex justify-between items-center mb-lg">
-            <h2 className="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wider">Top Projects</h2>
-          </div>
-          <div className="space-y-md">
-            <div className="bg-[#1f1f27] p-md rounded-xl border border-white/10 hover:bg-white/5 transition-colors cursor-pointer group">
-              <div className="flex justify-between items-start mb-sm">
-                <h3 className="font-label-md text-label-md font-bold text-primary group-hover:underline">PrismORM</h3>
-                <div className="flex items-center gap-xs text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                  <span className="font-label-sm text-label-sm">4.2k</span>
-                </div>
-              </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">A high-performance ORM for Rust with auto-generated migrations.</p>
-            </div>
-            <div className="bg-[#1f1f27] p-md rounded-xl border border-white/10 hover:bg-white/5 transition-colors cursor-pointer group">
-              <div className="flex justify-between items-start mb-sm">
-                <h3 className="font-label-md text-label-md font-bold text-primary group-hover:underline">FluxUI</h3>
-                <div className="flex items-center gap-xs text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                  <span className="font-label-sm text-label-sm">1.8k</span>
-                </div>
-              </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">A library of motion-driven UI components for React and Tailwind.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="mt-xxl py-lg border-t border-white/10 opacity-50">
-          <div className="flex flex-wrap gap-md mb-md">
-            <a className="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface" href="#">Privacy</a>
-            <a className="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface" href="#">Terms</a>
-            <a className="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface" href="#">API</a>
-            <a className="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface" href="#">GitHub</a>
-          </div>
-          <p className="font-label-sm text-label-sm text-on-surface-variant">
-            © 2024 DevHub Inc. Built for developers by developers.
-          </p>
-        </footer>
-      </aside>
-
-      {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/10 flex justify-around items-center py-sm z-50">
-        <a className="flex flex-col items-center gap-xs text-primary" href="#">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
-          <span className="text-[10px] font-bold">Home</span>
+      {/* 3. MOBILE BOTTOM NAVIGATION */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center py-2 z-50 shadow-lg">
+        <a className="flex flex-col items-center gap-0.5 text-[#0a66c2]" href="#">
+          <span className="material-symbols-outlined text-[22px]">home</span>
+          <span className="text-[10px] font-semibold">Home</span>
         </a>
-        <a className="flex flex-col items-center gap-xs text-on-surface-variant" href="#" onClick={(e) => { e.preventDefault(); navigate("/stack"); }}>
-          <span className="material-symbols-outlined">explore</span>
+        <a className="flex flex-col items-center gap-0.5 text-black/60" href="#" onClick={(e) => { e.preventDefault(); navigate("/stack"); }}>
+          <span className="material-symbols-outlined text-[22px]">explore</span>
           <span className="text-[10px]">Explore</span>
         </a>
-        <a className="flex flex-col items-center gap-xs text-on-surface-variant relative" href="#">
-          <span className="material-symbols-outlined">notifications</span>
-          <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-slate-900"></div>
+        <a className="flex flex-col items-center gap-0.5 text-black/60 relative" href="#">
+          <span className="material-symbols-outlined text-[22px]">notifications</span>
+          <div className="absolute top-0 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
           <span className="text-[10px]">Alerts</span>
         </a>
-        <a className="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
-          <span className="material-symbols-outlined">mail</span>
-          <span className="text-[10px]">Chat</span>
+        <a className="flex flex-col items-center gap-0.5 text-black/60" href="#" onClick={(e) => { e.preventDefault(); navigate("/profile"); }}>
+          <span className="material-symbols-outlined text-[22px]">account_circle</span>
+          <span className="text-[10px]">Me</span>
         </a>
       </nav>
     </div>
